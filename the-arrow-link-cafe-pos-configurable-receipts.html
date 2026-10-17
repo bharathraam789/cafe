@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#18243b">
+<title>THE ARROW LINK | Café POS</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#18243b;--navy2:#253654;--gold:#d6a65c;--bg:#f4f6fa;--line:#e1e6ef;--muted:#69758a;--ink:#1c2638;--green:#18794e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 14px;font-weight:700;background:var(--navy);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#edf0f7;color:var(--navy)}.gold{background:var(--gold);color:#201a10}.danger{background:#b42318;color:#fff}
+.topbar{background:var(--navy);color:white;padding:15px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-size:17px;letter-spacing:.08em;font-weight:900}.logo span{display:block;color:#d3dcec;font-size:11px;letter-spacing:.03em;font-weight:500;margin-top:3px}
+.status{font-size:12px;color:#e7edf8}.container{max-width:1450px;margin:22px auto;padding:0 16px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 20px #17233a08;margin-bottom:16px}
+h1,h2,h3,p{margin-top:0}h2{font-size:19px;margin-bottom:12px}h3{font-size:15px;margin-bottom:8px}.muted{color:var(--muted)}.small{font-size:12px}
+input,select{width:100%;padding:11px 12px;border:1px solid #d6dce7;border-radius:9px;background:white;color:var(--ink);margin:5px 0 10px}
+label{font-size:12px;color:#536078;font-weight:700}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.authgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.appgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,.9fr);gap:16px;align-items:start}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px}
+.menuitem{border:1px solid var(--line);border-radius:13px;padding:13px;background:#fff;text-align:left;color:var(--ink);min-height:112px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+.menuitem:hover{border-color:var(--gold);box-shadow:0 4px 15px #d6a65c22}.menuitem .emoji{font-size:25px}.menuitem .name{font-weight:800}.menuitem .price{color:#71501e;font-weight:800}
+.row{display:flex;align-items:center;gap:10px}.row>*{min-width:0}.row .grow{flex:1}.row .fixed{flex:none}
+.pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.pill{border:1px solid var(--line);border-radius:99px;padding:8px 12px;background:white;color:var(--ink);font-size:12px}.pill.active{background:var(--navy);color:white;border-color:var(--navy)}
+.cartline,.orderline{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #edf0f5}.cartline:last-child,.orderline:last-child{border-bottom:0}
+.qty{display:flex;align-items:center;gap:7px}.qty button{padding:5px 9px;border-radius:7px}.totalrow{display:flex;justify-content:space-between;padding:8px 0}.total{font-size:22px;font-weight:900;color:#6c4b17}
+.notice{padding:12px 14px;background:#fff5dc;color:#70500b;border-radius:10px;white-space:pre-wrap;margin-bottom:14px}.notice.ok{background:#e8f7ef;color:#17653f}.notice.error{background:#fdecec;color:#a32121}
+.hidden{display:none!important}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}.tab{background:#e9edf5;color:var(--navy)}.tab.active{background:var(--navy);color:white}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.kpi{background:#f6f7fb;border-radius:12px;padding:13px}.kpi .value{font-size:20px;font-weight:900;margin-top:5px}
+footer{text-align:center;color:#7b8495;font-size:12px;padding:18px}
+@media(max-width:850px){.appgrid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.container{padding:0 10px;margin:12px auto}.panel{padding:14px}.topbar{padding:13px 15px}.kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:460px){.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.authgrid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.row.mobile-stack{align-items:stretch;flex-direction:column}}
+.kitchen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.kitchen-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff}
+.kitchen-card h3{margin-bottom:5px}.kitchen-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+.kitchen-items{border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:8px 0;margin:8px 0}
+.kitchen-item{display:flex;justify-content:space-between;gap:10px;padding:4px 0}
+.status-tag{display:inline-block;padding:4px 8px;border-radius:99px;background:#fff2d5;color:#76500b;font-size:11px;font-weight:800;text-transform:uppercase}
+.kitchen-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.kitchen-actions button{flex:1;min-width:100px}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">THE ARROW LINK <span>CAFÉ POS · CLOUD FIRST</span></div>
+  <div class="status" id="sessionStatus">Not connected</div>
+</header>
+<main class="container">
+  <div id="notice" class="notice">Connect your Supabase project to begin. This starter is for development and testing.</div>
+
+  <section id="connectPanel" class="panel">
+    <h2>Connect cloud database</h2>
+    <p class="muted small">Use the Supabase Project URL and anon/publishable key. Never paste a service_role or secret key into this page.</p>
+    <label>Project URL</label><input id="projectUrl" placeholder="https://YOUR_PROJECT.supabase.co">
+    <label>Anon / publishable key</label><input id="projectKey" placeholder="sb_publishable_... or legacy anon key">
+    <button id="connectBtn">Connect to Supabase</button>
+  </section>
+
+  <section id="authPanel" class="panel hidden">
+    <h2>Owner and staff login</h2>
+    <div class="authgrid">
+      <div><label>Email</label><input id="email" type="email" placeholder="owner@cafe.com"></div>
+      <div><label>Password (8+ characters)</label><input id="password" type="password" placeholder="Strong password"></div>
+    </div>
+    <div class="row mobile-stack"><button id="signupBtn" class="grow">Create account</button><button id="loginBtn" class="secondary grow">Sign in</button><button id="logoutBtn" class="danger fixed">Sign out</button></div>
+    <p class="muted small">If email confirmation is enabled, confirm your email before signing in.</p>
+  </section>
+
+  <section id="createCafePanel" class="panel hidden">
+    <h2>Set up your café</h2>
+    <div class="grid">
+      <div><label>Café name</label><input id="cafeName" placeholder="Grand Aroma Café"></div>
+      <div><label>Currency</label><select id="currency"><option value="INR">INR — Indian Rupee</option></select></div>
+    </div>
+    <button id="createCafeBtn">Create café workspace</button>
+  </section>
+
+  <section id="cafeApp" class="hidden">
+    <div class="panel">
+      <div class="row mobile-stack">
+        <div class="grow"><h2 id="cafeTitle">Café workspace</h2><div class="muted small" id="cafeRole"></div></div>
+        <button id="refreshBtn" class="secondary fixed">Refresh</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="pos">POS Billing</button>
+        <button class="tab" data-tab="orders">Orders</button>
+        <button class="tab" data-tab="kitchen">Kitchen</button>
+        <button class="tab" data-tab="staff" id="staffTab">Staff & Roles</button>
+        <button class="tab" data-tab="menu">Menu Management</button>
+        <button class="tab" data-tab="reports">Today's Summary</button>
+      </div>
+    </div>
+
+    <section id="tab-pos">
+      <div class="appgrid">
+        <div class="panel">
+          <div class="row"><div class="grow"><h2>Menu</h2></div><input id="menuSearch" class="grow" style="max-width:280px" placeholder="Search menu"></div>
+          <div class="pills" id="categoryPills"></div>
+          <div id="menuGrid" class="menu-grid"></div>
+        </div>
+        <div class="panel">
+          <h2>Current order</h2>
+          <label>Order type</label>
+          <div class="pills"><button class="pill active" data-order-type="dine_in">Dine-in</button><button class="pill" data-order-type="takeaway">Takeaway</button></div>
+          <div id="tableWrap"><label>Table</label><select id="tableNumber"><option value="1">Table 1</option><option value="2">Table 2</option><option value="3">Table 3</option><option value="4">Table 4</option><option value="5">Table 5</option><option value="6">Table 6</option><option value="7">Table 7</option><option value="8">Table 8</option></select></div>
+          <label>Customer name (optional)</label><input id="customerName" placeholder="Customer name">
+          <div id="cartList" class="muted small">Choose an item from the menu.</div>
+          <div class="totalrow"><span>Subtotal</span><strong id="subtotal">₹0.00</strong></div>
+          <div class="totalrow"><span>Estimated tax</span><strong id="tax">₹0.00</strong></div>
+          <div class="totalrow"><span>Total</span><strong class="total" id="grandTotal">₹0.00</strong></div>
+          <label>Payment method</label><select id="paymentMethod"><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option><option value="unpaid">Unpaid / pay later</option></select>
+          <button id="placeOrderBtn" style="width:100%;margin-top:8px">Place order</button>
+          <p class="muted small" style="margin:10px 0 0">Demo menu items are sample data. Update them for your café before live use.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-orders" class="panel hidden">
+      <div class="row mobile-stack"><h2 class="grow">Recent orders</h2><button id="reloadOrdersBtn" class="secondary fixed">Reload</button></div>
+      <div class="panel" style="margin:10px 0;padding:12px">
+        <h3 style="margin-top:0">Receipt Settings</h3>
+        <label for="receiptPaperSize">Receipt paper size</label>
+        <select id="receiptPaperSize">
+          <option value="58mm">58 mm thermal receipt</option>
+          <option value="80mm">80 mm thermal receipt</option>
+          <option value="A4">A4 invoice</option>
+        </select>
+        <p class="muted small">Your choice is saved in this browser and used for future receipt previews and printing.</p>
+        <p id="receiptSettingStatus" class="muted small" aria-live="polite"></p>
+      </div>
+      <div id="ordersList" class="muted small">No orders yet.</div>
+    </section>
+
+    <section id="tab-kitchen" class="panel hidden">
+      <div class="row mobile-stack"><div class="grow"><h2>Kitchen Order Management</h2><p class="muted small">Orders refresh automatically every 20 seconds. You can also refresh manually.</p></div><button id="refreshKitchenBtn" class="secondary fixed">Refresh kitchen</button></div>
+      <div class="pills" id="kitchenFilters">
+        <button class="pill active" data-kitchen-filter="active">Active orders</button>
+        <button class="pill" data-kitchen-filter="all">All recent</button>
+      </div>
+      <div id="kitchenList" class="kitchen-grid"><p class="muted small">Loading kitchen orders…</p></div>
+    </section>
+
+
+    <section id="tab-staff" class="panel hidden">
+      <h2>Staff accounts & permissions</h2>
+      <div class="notice">Staff must create and confirm their own account first, then sign in once. Enter the same email below to add them to this café. Never share passwords.</div>
+      <div class="grid">
+        <div><label>Staff account email</label><input id="staffEmail" type="email" placeholder="staff@example.com"></div>
+        <div><label>Role</label><select id="staffRole"><option value="cashier">Cashier — billing and receipts</option><option value="kitchen">Kitchen — view orders and update preparation</option><option value="manager">Manager — menu and reports</option></select></div>
+      </div>
+      <button id="addStaffBtn">Add / update staff</button>
+      <h3 style="margin-top:24px">Current café team</h3>
+      <div id="staffList" class="muted small">Load staff list to begin.</div>
+      <p class="muted small">Owner role cannot be assigned from this screen. Test each role using separate staff accounts before real use.</p>
+    </section>
+
+    <section id="tab-menu" class="panel hidden">
+      <h2>Add menu item</h2>
+      <div class="grid">
+        <div><label>Item name</label><input id="newItemName" placeholder="Cappuccino"></div>
+        <div><label>Category</label><select id="newItemCategory"><option>Coffee</option><option>Tea</option><option>Cold Drinks</option><option>Snacks</option><option>Meals</option><option>Desserts</option><option>Other</option></select></div>
+        <div><label>Price (₹)</label><input id="newItemPrice" type="number" min="0" step="0.01" placeholder="150"></div>
+        <div><label>Tax rate (%)</label><input id="newItemTax" type="number" min="0" max="100" step="0.01" value="0"></div>
+      </div>
+      <button id="addMenuItemBtn">Save menu item</button>
+      <h2 style="margin-top:24px">Current menu</h2><div id="manageMenuList" class="muted small"></div>
+    </section>
+
+    <section id="tab-reports" class="panel hidden">
+      <h2>Today's summary</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="muted small">Orders today</div><div class="value" id="reportOrders">0</div></div>
+        <div class="kpi"><div class="muted small">Sales today</div><div class="value" id="reportSales">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">Dine-in / takeaway</div><div class="value" id="reportTypes">0 / 0</div></div>
+      </div>
+      <p class="muted small" style="margin-top:12px">Summary is based on completed orders created today in this café workspace.</p>
+    </section>
+  </section>
+</main>
+<footer>THE ARROW LINK · Café SaaS starter · Cloud-first prototype</footer>
+<script>
+(() => {
+  let sb=null,user=null,cafe=null,menu=[],cart=[],orderType='dine_in',activeCategory='All',currency='INR';
+  const $=id=>document.getElementById(id);
+  const money=paise=>new Intl.NumberFormat('en-IN',{style:'currency',currency}).format((Number(paise)||0)/100);
+  const paise=value=>Math.round((Number(value)||0)*100);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const show=(id,yes=true)=>$(id).classList.toggle('hidden',!yes);
+  function note(msg,type=''){ $('notice').textContent=msg; $('notice').className='notice'+(type?' '+type:''); }
+  function visibility(){
+    show('authPanel',!!sb);show('createCafePanel',!!user&&!cafe);show('cafeApp',!!user&&!!cafe);
+    $('sessionStatus').textContent=user?user.email:(sb?'Connected · signed out':'Not connected');
+    const role=cafe?.role||'';
+    // UI visibility is convenience only; SQL migration below enforces access in the database.
+    show('staffTab',role==='owner');
+    const menuTab=document.querySelector('[data-tab="menu"]'), reportTab=document.querySelector('[data-tab="reports"]');
+    if(menuTab)menuTab.classList.toggle('hidden',!['owner','manager'].includes(role));
+    if(reportTab)reportTab.classList.toggle('hidden',!['owner','manager','cashier'].includes(role));
+    const posTab=document.querySelector('[data-tab="pos"]'),ordersTab=document.querySelector('[data-tab="orders"]'),kTab=document.querySelector('[data-tab="kitchen"]');
+    if(posTab)posTab.classList.toggle('hidden',role==='kitchen');
+    if(ordersTab)ordersTab.classList.toggle('hidden',role==='kitchen');
+    if(kTab)kTab.classList.toggle('hidden',role==='cashier');
+    if(role==='kitchen'&&cafe) setTimeout(()=>setTab('kitchen'),0);
+    if(role==='cashier'&&cafe) setTimeout(()=>setTab('pos'),0);
+  }
+  async function connect(){
+    const url=$('projectUrl').value.trim(),key=$('projectKey').value.trim();
+    if(!url||!key){note('Enter both Supabase values first.');return;}
+    try{
+      sb=window.supabase.createClient(url,key);
+      const {data,error}=await sb.auth.getSession();if(error)throw error;
+      localStorage.setItem('arrow_cafe_url',url);localStorage.setItem('arrow_cafe_key',key);
+      user=data.session?.user||null;
+      if(user)await loadCafe();
+      visibility();note('Connected to Supabase.','ok');
+      sb.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;setTimeout(async()=>{cafe=null;if(user)await loadCafe();visibility();},0);});
+    }catch(e){note('Connection failed: '+e.message,'error');}
+  }
+  async function auth(kind){
+    if(!sb){note('Connect Supabase first.');return;}
+    const email=$('email').value.trim(),password=$('password').value;
+    if(!email||password.length<8){note('Enter an email and password of at least 8 characters.');return;}
+    const r=kind==='signup'?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
+    if(r.error){note(r.error.message,'error');return;}
+    user=r.data.user||r.data.session?.user||null;
+    if(kind==='signup'&&!r.data.session){note('Account created. Check your email, confirm it, then sign in.','ok');return;}
+    await loadCafe();visibility();note('Signed in successfully.','ok');
+  }
+  async function loadCafe(){
+    cafe=null;if(!user||!sb)return;
+    const {data,error}=await sb.from('cafe_members').select('cafe_id,role,cafes(id,name,currency_code)').eq('user_id',user.id);
+    if(error){note('Could not load café. Run cafe-schema.sql in Supabase SQL Editor. '+error.message,'error');return;}
+    if(data?.length){
+      const m=data[0];cafe={id:m.cafe_id,name:m.cafes?.name||'My Café',role:m.role};
+      currency=m.cafes?.currency_code||'INR';$('cafeTitle').textContent=cafe.name;$('cafeRole').textContent='Signed in as '+cafe.role;
+      await Promise.all([loadMenu(),loadOrders()]);
+    }
+    visibility();
+  }
+  async function createCafe(){
+    const name=$('cafeName').value.trim();if(!name){note('Enter a café name.');return;}
+    const {data:c,error}=await sb.from('cafes').insert({name,owner_user_id:user.id,currency_code:$('currency').value}).select().single();
+    if(error){note('Café creation failed: '+error.message,'error');return;}
+    const {error:memberError}=await sb.from('cafe_members').insert({cafe_id:c.id,user_id:user.id,role:'owner'});
+    if(memberError){note('Café created but owner membership failed: '+memberError.message,'error');return;}
+    const defaults=[
+      ['Espresso','Coffee',900,5],['Cappuccino','Coffee',15000,5],['Latte','Coffee',17000,5],
+      ['Masala Tea','Tea',4000,5],['Cold Coffee','Cold Drinks',12000,5],['Veg Sandwich','Snacks',11000,5],
+      ['French Fries','Snacks',9000,5],['Chocolate Brownie','Desserts',10000,5]
+    ].map(([name,category,price,tax_rate])=>({cafe_id:c.id,name,category,price_paise:price,tax_rate,active:true}));
+    const {error:menuError}=await sb.from('cafe_menu_items').insert(defaults);
+    if(menuError){note('Workspace created, but sample menu could not be added: '+menuError.message,'error');}
+    cafe={id:c.id,name:c.name,role:'owner'};await loadCafe();visibility();note('Café workspace created. Edit the sample menu for your café.','ok');
+  }
+  function categories(){return ['All',...new Set(menu.map(i=>i.category||'Other'))];}
+  function renderCategories(){
+    $('categoryPills').innerHTML=categories().map(c=>`<button class="pill ${activeCategory===c?'active':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');
+    document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{activeCategory=b.dataset.cat;renderCategories();renderMenu();});
+  }
+  function renderMenu(){
+    const q=$('menuSearch').value.trim().toLowerCase();
+    const items=menu.filter(i=>i.active&&(activeCategory==='All'||i.category===activeCategory)&&i.name.toLowerCase().includes(q));
+    $('menuGrid').innerHTML=items.length?items.map(i=>`<button class="menuitem" data-menu="${i.id}"><span class="emoji">${({'Coffee':'☕','Tea':'🍵','Cold Drinks':'🥤','Snacks':'🥪','Meals':'🍽️','Desserts':'🍰'}[i.category]||'🍴')}</span><span class="name">${esc(i.name)}</span><span class="price">${money(i.price_paise)}</span></button>`).join(''):'<p class="muted small">No menu items match. Add items in Menu Management.</p>';
+    document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>addCart(b.dataset.menu));
+  }
+  async function loadMenu(){
+    if(!cafe)return;
+    const {data,error}=await sb.from('cafe_menu_items').select('*').eq('cafe_id',cafe.id).eq('active',true).order('category').order('name');
+    if(error){note('Menu load error: '+error.message,'error');return;}
+    menu=data||[];renderCategories();renderMenu();renderManageMenu();
+  }
+  function addCart(id){const item=menu.find(i=>i.id===id);if(!item)return;const found=cart.find(i=>i.id===id);if(found)found.qty++;else cart.push({...item,qty:1});renderCart();}
+  function totals(){let subtotal=0,tax=0;cart.forEach(i=>{subtotal+=i.price_paise*i.qty;tax+=Math.round(i.price_paise*i.qty*Number(i.tax_rate||0)/100);});return{subtotal,tax,total:subtotal+tax};}
+  function renderCart(){
+    const t=totals();
+    $('cartList').innerHTML=cart.length?cart.map(i=>`<div class="cartline"><div class="grow"><strong>${esc(i.name)}</strong><div class="muted small">${money(i.price_paise)} × ${i.qty}</div></div><div class="qty"><button class="secondary" data-minus="${i.id}">−</button><span>${i.qty}</span><button class="secondary" data-plus="${i.id}">+</button></div></div>`).join(''):'Choose an item from the menu.';
+    $('subtotal').textContent=money(t.subtotal);$('tax').textContent=money(t.tax);$('grandTotal').textContent=money(t.total);
+    document.querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>{const x=cart.find(i=>i.id===b.dataset.minus);if(x.qty>1)x.qty--;else cart=cart.filter(i=>i.id!==x.id);renderCart();});
+    document.querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>{cart.find(i=>i.id===b.dataset.plus).qty++;renderCart();});
+  }
+  async function placeOrder(){
+    if(!['owner','manager','cashier'].includes(cafe?.role)){note('Your role cannot create orders.','error');return;}
+    if(!cart.length){note('Add at least one menu item before placing the order.');return;}
+    const t=totals();const btn=$('placeOrderBtn');btn.disabled=true;
+    try{
+      // Prototype inserts order header and lines separately. Production version must use a single database transaction/RPC.
+      const payload={cafe_id:cafe.id,order_type:orderType,table_number:orderType==='dine_in'?Number($('tableNumber').value):null,customer_name:$('customerName').value.trim()||null,status:'placed',payment_method:$('paymentMethod').value,subtotal_paise:t.subtotal,tax_paise:t.tax,total_paise:t.total,created_by:user.id};
+      const {data:o,error}=await sb.from('cafe_orders').insert(payload).select().single();
+      if(error)throw error;
+      const lines=cart.map(i=>({order_id:o.id,cafe_id:cafe.id,menu_item_id:i.id,item_name:i.name,quantity:i.qty,unit_price_paise:i.price_paise,tax_rate:Number(i.tax_rate||0),line_total_paise:i.price_paise*i.qty+Math.round(i.price_paise*i.qty*Number(i.tax_rate||0)/100)}));
+      const {error:lineError}=await sb.from('cafe_order_items').insert(lines);
+      if(lineError){note('Order reference '+o.order_number+' was created but its items failed to save. Do not retry blindly; contact support. '+lineError.message,'error');return;}
+      cart=[];$('customerName').value='';renderCart();await loadOrders();await loadReport();note('Order placed: '+o.order_number,'ok');
+    }catch(e){note('Could not place order: '+e.message,'error');}
+    finally{btn.disabled=false;}
+  }
+  const RECEIPT_SIZE_KEY='arrow_cafe_receipt_paper_size';
+  function getReceiptPaperSize(){
+    const saved=localStorage.getItem(RECEIPT_SIZE_KEY);
+    return ['58mm','80mm','A4'].includes(saved)?saved:'80mm';
+  }
+  function saveReceiptPaperSize(){
+    const select=$('receiptPaperSize');
+    if(!select)return;
+    localStorage.setItem(RECEIPT_SIZE_KEY,select.value);
+    $('receiptSettingStatus').textContent='Saved: '+select.options[select.selectedIndex].text;
+  }
+  if($('receiptPaperSize')){
+    $('receiptPaperSize').value=getReceiptPaperSize();
+    $('receiptPaperSize').onchange=saveReceiptPaperSize;
+    $('receiptSettingStatus').textContent='Current: '+$('receiptPaperSize').options[$('receiptPaperSize').selectedIndex].text;
+  }
+  async function loadOrders(){
+    if(!cafe)return;
+    const {data,error}=await sb.from('cafe_orders').select('id,order_number,order_type,table_number,customer_name,status,payment_method,subtotal_paise,tax_paise,total_paise,created_at').eq('cafe_id',cafe.id).order('created_at',{ascending:false}).limit(30);
+    if(error){note('Orders load error: '+error.message,'error');return;}
+    const orders=data||[];
+    $('ordersList').innerHTML=orders.length?orders.map(o=>`<div class="orderline"><div class="grow"><strong>${esc(o.order_number)}</strong><div class="muted small">${o.order_type==='dine_in'?'Dine-in · Table '+o.table_number:'Takeaway'} · ${esc(o.customer_name||'Walk-in')} · ${new Date(o.created_at).toLocaleString('en-IN')}</div><div class="muted small">Payment: ${esc(o.payment_method.replace('_',' '))} · Status: ${esc(o.status)}</div><button class="secondary" data-print-receipt="${o.id}" style="margin-top:8px">Print receipt (${esc(getReceiptPaperSize())})</button></div><div style="text-align:right"><strong>${money(o.total_paise)}</strong><select data-status="${o.id}" style="max-width:140px"><option value="placed" ${o.status==='placed'?'selected':''}>Placed</option><option value="preparing" ${o.status==='preparing'?'selected':''}>Preparing</option><option value="ready" ${o.status==='ready'?'selected':''}>Ready</option><option value="completed" ${o.status==='completed'?'selected':''}>Completed</option><option value="cancelled" ${o.status==='cancelled'?'selected':''}>Cancelled</option></select></div></div>`).join(''):'No orders yet.';
+    document.querySelectorAll('[data-status]').forEach(s=>s.onchange=async()=>{const {error}=await sb.from('cafe_orders').update({status:s.value}).eq('id',s.dataset.status).eq('cafe_id',cafe.id);if(error)note('Status update failed: '+error.message,'error');else{note('Order status updated.','ok');await loadReport();}});
+    document.querySelectorAll('[data-print-receipt]').forEach(b=>b.onclick=()=>printReceipt(b.dataset.printReceipt));
+    await loadReport();
+  }
+  async function printReceipt(orderId){
+    // Open the print window synchronously from the click to avoid browser popup blocking.
+    const win=window.open('','_blank','width=420,height=720');
+    if(!win){note('Receipt window blocked. Allow pop-ups for this local app, then try again.','error');return;}
+    win.document.open();win.document.write('<!doctype html><html><head><title>Receipt</title></head><body style="font:14px sans-serif;padding:18px">Loading receipt…</body></html>');win.document.close();
+    try{
+      const {data:order,error:orderError}=await sb.from('cafe_orders').select('id,order_number,order_type,table_number,customer_name,status,payment_method,subtotal_paise,tax_paise,total_paise,created_at').eq('id',orderId).eq('cafe_id',cafe.id).single();
+      if(orderError)throw orderError;
+      const {data:items,error:itemError}=await sb.from('cafe_order_items').select('item_name,quantity,unit_price_paise,tax_rate,line_total_paise').eq('order_id',orderId).eq('cafe_id',cafe.id).order('created_at');
+      if(itemError)throw itemError;
+      const rows=(items||[]).map(i=>`<tr><td class="item"><strong>${esc(i.item_name)}</strong><div class="muted">${Number(i.quantity)} × ${money(i.unit_price_paise)}</div></td><td class="amount">${money(Number(i.unit_price_paise)*Number(i.quantity))}</td></tr>`).join('');
+      const type=order.order_type==='dine_in'?'Dine-in · Table '+order.table_number:'Takeaway';
+      const payment=String(order.payment_method||'').replaceAll('_',' ');
+      const date=new Date(order.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+      const paperSize=getReceiptPaperSize();
+      const paperCss=paperSize==='A4'
+        ? '@page{size:A4 portrait;margin:10mm}html,body{width:190mm;margin:0;padding:0}body{padding:0;font-size:12px}h1{font-size:22px}.item{width:70%}'
+        : paperSize==='58mm'
+          ? '@page{size:58mm auto;margin:2mm}html,body{width:54mm;margin:0;padding:0}body{padding:1mm;font-size:10px}h1{font-size:14px}td{padding:3px 0}.grand{font-size:13px}'
+          : '@page{size:80mm auto;margin:3mm}html,body{width:74mm;margin:0;padding:0}body{padding:2mm;font-size:12px}h1{font-size:16px}';
+      const receipt=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(order.order_number)} Receipt</title><style>
+        *{box-sizing:border-box}body{font:12px/1.35 Arial,sans-serif;color:#111}h1{text-align:center;margin:0 0 3px;letter-spacing:.4px}p{margin:3px 0}.center{text-align:center}.muted{color:#444;font-size:10px}.dash{border:0;border-top:1px dashed #333;margin:8px 0}table{width:100%;border-collapse:collapse}td{padding:4px 0;vertical-align:top}.item{width:70%;overflow-wrap:anywhere}.amount{text-align:right;white-space:nowrap}.sum{display:flex;justify-content:space-between;padding:3px 0}.grand{font-size:15px;font-weight:800}.meta{overflow-wrap:anywhere}.footer{text-align:center;margin-top:12px;font-size:10px}@media screen{body{margin:12px auto;padding:10px;border:1px solid #ddd;min-height:120mm}.actions{text-align:center;margin:12px 0}.actions button{padding:8px 14px}.preview-note{font-size:11px;text-align:center;color:#555}}@media print{.actions,.preview-note{display:none}body{margin:0;padding:0}}${paperCss}
+      </style></head><body><h1>${esc(cafe.name)}</h1><p class="center muted">Customer receipt</p><hr class="dash"><p class="meta"><strong>Order:</strong> ${esc(order.order_number)}</p><p><strong>Date:</strong> ${esc(date)}</p><p><strong>Type:</strong> ${esc(type)}</p><p><strong>Customer:</strong> ${esc(order.customer_name||'Walk-in')}</p><p><strong>Payment:</strong> ${esc(payment)}</p><p><strong>Status:</strong> ${esc(order.status)}</p><hr class="dash"><table><thead><tr><td><strong>Item</strong></td><td class="amount"><strong>Total</strong></td></tr></thead><tbody>${rows}</tbody></table><hr class="dash"><div class="sum"><span>Subtotal</span><strong>${money(order.subtotal_paise)}</strong></div><div class="sum"><span>Tax</span><strong>${money(order.tax_paise)}</strong></div><div class="sum grand"><span>Total</span><strong>${money(order.total_paise)}</strong></div><hr class="dash"><p class="center">Thank you! Visit again.</p><div class="footer">THE ARROW LINK Café POS</div><div class="actions"><button onclick="window.print()">Print receipt</button> <button onclick="window.close()">Close</button></div><p class="preview-note">Selected paper: ${esc(paperSize)}. In the print dialog, select the matching printer or paper size. Disable browser headers and footers if shown.</p><script>window.onload=()=>setTimeout(()=>window.print(),350);<\/script></body></html>`;
+      win.document.open();win.document.write(receipt);win.document.close();
+    }catch(e){win.document.body.innerHTML='<p>Could not load receipt: '+esc(e.message)+'</p><button onclick="window.close()">Close</button>';note('Could not load receipt: '+e.message,'error');}
+  }
+  let kitchenFilter='active',kitchenTimer=null;
+  async function loadKitchen(){
+    if(!cafe||!sb)return;
+    const list=$('kitchenList');
+    list.innerHTML='<p class="muted small">Loading kitchen orders…</p>';
+    let query=sb.from('cafe_orders').select('id,order_number,order_type,table_number,customer_name,status,payment_method,total_paise,created_at').eq('cafe_id',cafe.id).order('created_at',{ascending:false}).limit(50);
+    if(kitchenFilter==='active')query=query.in('status',['placed','preparing','ready']);
+    const {data:orders,error}=await query;
+    if(error){list.innerHTML='<p class="muted small">Could not load kitchen orders.</p>';note('Kitchen load error: '+error.message,'error');return;}
+    if(!orders?.length){list.innerHTML='<p class="muted small">No orders to show.</p>';return;}
+    const ids=orders.map(o=>o.id);
+    const {data:lines,error:lineError}=await sb.from('cafe_order_items').select('order_id,item_name,quantity').eq('cafe_id',cafe.id).in('order_id',ids);
+    if(lineError){list.innerHTML='<p class="muted small">Orders loaded, but item details could not be loaded.</p>';note('Kitchen items error: '+lineError.message,'error');return;}
+    const grouped={};
+    (lines||[]).forEach(line=>(grouped[line.order_id] ||= []).push(line));
+    const nextStatus={placed:'preparing',preparing:'ready',ready:'completed'};
+    const actionLabel={placed:'Start preparing',preparing:'Mark ready',ready:'Complete order'};
+    list.innerHTML=orders.map(o=>{
+      const type=o.order_type==='dine_in'?'Dine-in · Table '+o.table_number:'Takeaway';
+      const items=(grouped[o.id]||[]).map(i=>`<div class="kitchen-item"><span>${esc(i.item_name)}</span><strong>× ${Number(i.quantity)}</strong></div>`).join('');
+      const next=nextStatus[o.status];
+      return `<article class="kitchen-card"><div class="row"><div class="grow"><h3>${esc(o.order_number)}</h3><div class="kitchen-meta">${esc(type)} · ${esc(o.customer_name||'Walk-in')}</div></div><span class="status-tag">${esc(o.status)}</span></div><div class="kitchen-meta">${esc(new Date(o.created_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))} · ${money(o.total_paise)}</div><div class="kitchen-items">${items||'<span class="muted small">No item details found</span>'}</div><div class="kitchen-actions">${next?`<button data-kitchen-next="${o.id}" data-next-status="${next}">${actionLabel[o.status]}</button>`:''}<button class="secondary" data-kitchen-refresh>Refresh</button></div></article>`;
+    }).join('');
+    document.querySelectorAll('[data-kitchen-next]').forEach(b=>b.onclick=async()=>{
+      b.disabled=true;
+      const {error}=await sb.rpc('cafe_set_order_status',{p_cafe_id:cafe.id,p_order_id:b.dataset.kitchenNext,p_status:b.dataset.nextStatus});
+      if(error){note('Could not update kitchen status: '+error.message,'error');b.disabled=false;return;}
+      note('Kitchen status updated to '+b.dataset.nextStatus+'.','ok');
+      await Promise.all([loadKitchen(),loadOrders(),loadReport()]);
+    });
+    document.querySelectorAll('[data-kitchen-refresh]').forEach(b=>b.onclick=loadKitchen);
+  }
+  function startKitchenRefresh(){
+    if(kitchenTimer)clearInterval(kitchenTimer);
+    kitchenTimer=setInterval(()=>{if(cafe&&!$('tab-kitchen').classList.contains('hidden'))loadKitchen();},20000);
+  }
+
+  async function loadReport(){
+    if(!cafe||!['owner','manager','cashier'].includes(cafe.role))return;
+    const start=new Date();start.setHours(0,0,0,0);
+    const {data,error}=await sb.from('cafe_orders').select('order_type,total_paise,status,created_at').eq('cafe_id',cafe.id).gte('created_at',start.toISOString()).neq('status','cancelled');
+    if(error)return;
+    const rows=data||[];$('reportOrders').textContent=rows.length;
+    $('reportSales').textContent=money(rows.reduce((n,o)=>n+Number(o.total_paise||0),0));
+    $('reportTypes').textContent=rows.filter(o=>o.order_type==='dine_in').length+' / '+rows.filter(o=>o.order_type==='takeaway').length;
+  }
+  function renderManageMenu(){
+    $('manageMenuList').innerHTML=menu.length?menu.map(i=>`<div class="orderline" style="align-items:center;gap:8px;flex-wrap:wrap"><div class="grow" style="min-width:130px"><strong>${esc(i.name)}</strong><div class="muted small">${esc(i.category)}</div></div><label class="small">Price ₹<input data-edit-price="${i.id}" type="number" min="0" step="0.01" value="${(Number(i.price_paise||0)/100).toFixed(2)}" style="width:105px;padding:8px"></label><label class="small">Tax %<input data-edit-tax="${i.id}" type="number" min="0" max="100" step="0.01" value="${Number(i.tax_rate||0)}" style="width:80px;padding:8px"></label><button class="secondary" data-save-menu="${i.id}">Save</button><button class="danger" data-deactivate="${i.id}">Disable</button></div>`).join(''):'No menu items yet.';
+    document.querySelectorAll('[data-save-menu]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.saveMenu;
+      const price=Number(document.querySelector(`[data-edit-price="${id}"]`).value);
+      const tax=Number(document.querySelector(`[data-edit-tax="${id}"]`).value);
+      if(!Number.isFinite(price)||price<=0){note('Price must be greater than ₹0.','error');return;}
+      if(!Number.isFinite(tax)||tax<0||tax>100){note('Tax rate must be between 0 and 100.','error');return;}
+      b.disabled=true;
+      const {error}=await sb.from('cafe_menu_items').update({price_paise:paise(price),tax_rate:tax}).eq('id',id).eq('cafe_id',cafe.id);
+      b.disabled=false;
+      if(error){note('Could not update menu item: '+error.message,'error');return;}
+      cart=cart.filter(item=>item.id!==id);await loadMenu();renderCart();note('Menu price and tax updated. New orders will use the updated values.','ok');
+    });
+    document.querySelectorAll('[data-deactivate]').forEach(b=>b.onclick=async()=>{const {error}=await sb.from('cafe_menu_items').update({active:false}).eq('id',b.dataset.deactivate).eq('cafe_id',cafe.id);if(error)note(error.message,'error');else{cart=cart.filter(item=>item.id!==b.dataset.deactivate);await loadMenu();renderCart();note('Menu item disabled.','ok');}});
+  }
+  async function addMenuItem(){
+    if(!['owner','manager'].includes(cafe?.role)){note('Only owner or manager can edit the menu.','error');return;}
+    const name=$('newItemName').value.trim(),price=Number($('newItemPrice').value),tax=Number($('newItemTax').value)||0;
+    if(!name||!Number.isFinite(price)||price<0){note('Enter an item name and a valid price.');return;}
+    if(tax<0||tax>100){note('Tax rate must be between 0 and 100.');return;}
+    const {error}=await sb.from('cafe_menu_items').insert({cafe_id:cafe.id,name,category:$('newItemCategory').value,price_paise:paise(price),tax_rate:tax,active:true});
+    if(error){note('Could not save menu item: '+error.message,'error');return;}
+    $('newItemName').value='';$('newItemPrice').value='';await loadMenu();note('Menu item added.','ok');
+  }
+
+  async function loadStaff(){
+    if(!cafe||cafe.role!=='owner')return;
+    const box=$('staffList');box.textContent='Loading staff…';
+    const {data,error}=await sb.from('cafe_members').select('user_id,role,created_at').eq('cafe_id',cafe.id).order('created_at');
+    if(error){box.textContent='Could not load staff: '+error.message;return;}
+    if(!data?.length){box.textContent='No staff accounts yet.';return;}
+    box.innerHTML=data.map(m=>`<div class="orderline" style="gap:10px;flex-wrap:wrap"><div class="grow"><strong>${esc(m.user_id===user.id?'You (owner)':'Staff account')}</strong><div class="muted small">${esc(m.user_id)}</div></div><span class="status-tag">${esc(m.role)}</span>${m.user_id!==user.id?`<select data-staff-role="${m.user_id}" style="max-width:190px"><option value="cashier" ${m.role==='cashier'?'selected':''}>Cashier</option><option value="kitchen" ${m.role==='kitchen'?'selected':''}>Kitchen</option><option value="manager" ${m.role==='manager'?'selected':''}>Manager</option></select><button class="danger" data-remove-staff="${m.user_id}">Remove</button>`:''}</div>`).join('');
+    document.querySelectorAll('[data-staff-role]').forEach(sel=>sel.onchange=async()=>{
+      const {error}=await sb.rpc('cafe_owner_set_staff_role',{p_cafe_id:cafe.id,p_staff_user_id:sel.dataset.staffRole,p_role:sel.value});
+      if(error){note('Role update failed: '+error.message,'error');await loadStaff();return;}
+      note('Staff role updated.','ok');await loadStaff();
+    });
+    document.querySelectorAll('[data-remove-staff]').forEach(btn=>btn.onclick=async()=>{
+      if(!confirm('Remove this staff member from this café?'))return;
+      const {error}=await sb.rpc('cafe_owner_remove_staff',{p_cafe_id:cafe.id,p_staff_user_id:btn.dataset.removeStaff});
+      if(error){note('Could not remove staff: '+error.message,'error');return;}
+      note('Staff member removed.','ok');await loadStaff();
+    });
+  }
+  async function addStaff(){
+    if(!cafe||cafe.role!=='owner'){note('Only the café owner can manage staff.','error');return;}
+    const email=$('staffEmail').value.trim().toLowerCase(),role=$('staffRole').value;
+    if(!email||!email.includes('@')){note('Enter the staff member’s registered email address.','error');return;}
+    const btn=$('addStaffBtn');btn.disabled=true;
+    const {data,error}=await sb.rpc('cafe_owner_add_staff_by_email',{p_cafe_id:cafe.id,p_email:email,p_role:role});
+    btn.disabled=false;
+    if(error){note('Could not add staff: '+error.message,'error');return;}
+    $('staffEmail').value='';note(typeof data==='string'?data:'Staff added or role updated.','ok');await loadStaff();
+  }
+
+  function setTab(name){
+    ['pos','orders','kitchen','staff','menu','reports'].forEach(t=>show('tab-'+t,t===name));
+    document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+    if(name==='orders')loadOrders();if(name==='kitchen')loadKitchen();if(name==='staff')loadStaff();if(name==='menu')renderManageMenu();if(name==='reports')loadReport();
+  }
+  $('connectBtn').onclick=connect;$('signupBtn').onclick=()=>auth('signup');$('loginBtn').onclick=()=>auth('login');
+  $('logoutBtn').onclick=async()=>{if(sb)await sb.auth.signOut();user=null;cafe=null;visibility();note('Signed out.','ok');};
+  $('createCafeBtn').onclick=createCafe;$('placeOrderBtn').onclick=placeOrder;$('addMenuItemBtn').onclick=addMenuItem;
+  $('menuSearch').oninput=renderMenu;$('refreshBtn').onclick=async()=>{await loadCafe();note('Workspace refreshed.','ok');};
+  $('reloadOrdersBtn').onclick=loadOrders;
+  $('refreshKitchenBtn').onclick=loadKitchen;
+  $('addStaffBtn').onclick=addStaff;
+  document.querySelectorAll('[data-kitchen-filter]').forEach(b=>b.onclick=()=>{kitchenFilter=b.dataset.kitchenFilter;document.querySelectorAll('[data-kitchen-filter]').forEach(x=>x.classList.toggle('active',x===b));loadKitchen();});
+  startKitchenRefresh();
+  document.querySelectorAll('[data-order-type]').forEach(b=>b.onclick=()=>{orderType=b.dataset.orderType;document.querySelectorAll('[data-order-type]').forEach(x=>x.classList.toggle('active',x===b));show('tableWrap',orderType==='dine_in');});
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+  const savedUrl=localStorage.getItem('arrow_cafe_url'),savedKey=localStorage.getItem('arrow_cafe_key');
+  if(savedUrl)$('projectUrl').value=savedUrl;if(savedKey)$('projectKey').value=savedKey;
+  if(savedUrl&&savedKey)connect();
+})();
+</script>
+</body>
+</html>
