@@ -170,11 +170,17 @@ footer{text-align:center;color:#7b8495;font-size:12px;padding:18px}
     <section id="tab-reports" class="panel hidden">
       <h2>Today's summary</h2>
       <div class="kpis">
-        <div class="kpi"><div class="muted small">Orders today</div><div class="value" id="reportOrders">0</div></div>
-        <div class="kpi"><div class="muted small">Sales today</div><div class="value" id="reportSales">₹0.00</div></div>
-        <div class="kpi"><div class="muted small">Dine-in / takeaway</div><div class="value" id="reportTypes">0 / 0</div></div>
+        <div class="kpi"><div class="muted small">Completed orders today</div><div class="value" id="reportOrders">0</div></div>
+        <div class="kpi"><div class="muted small">Completed sales today</div><div class="value" id="reportSales">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">Total tax</div><div class="value" id="reportTax">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">Cash collections</div><div class="value" id="reportCash">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">UPI collections</div><div class="value" id="reportUpi">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">Card collections</div><div class="value" id="reportCard">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">Bank transfer collections</div><div class="value" id="reportBankTransfer">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">Unpaid / pay later</div><div class="value" id="reportUnpaid">₹0.00</div></div>
+        <div class="kpi"><div class="muted small">Dine-in / takeaway orders</div><div class="value" id="reportTypes">0 / 0</div></div>
       </div>
-      <p class="muted small" style="margin-top:12px">Summary is based on completed orders created today in this café workspace.</p>
+      <p class="muted small" style="margin-top:12px">All figures include completed orders created today only. Payment totals are grouped by the payment method saved on each order.</p>
     </section>
   </section>
 </main>
@@ -390,10 +396,26 @@ footer{text-align:center;color:#7b8495;font-size:12px;padding:18px}
   async function loadReport(){
     if(!cafe||!['owner','manager','cashier'].includes(cafe.role))return;
     const start=new Date();start.setHours(0,0,0,0);
-    const {data,error}=await sb.from('cafe_orders').select('order_type,total_paise,status,created_at').eq('cafe_id',cafe.id).gte('created_at',start.toISOString()).neq('status','cancelled');
-    if(error)return;
-    const rows=data||[];$('reportOrders').textContent=rows.length;
-    $('reportSales').textContent=money(rows.reduce((n,o)=>n+Number(o.total_paise||0),0));
+    const end=new Date(start);end.setDate(end.getDate()+1);
+    const {data,error}=await sb.from('cafe_orders')
+      .select('order_type,total_paise,tax_paise,status,payment_method,created_at')
+      .eq('cafe_id',cafe.id)
+      .eq('status','completed')
+      .gte('created_at',start.toISOString())
+      .lt('created_at',end.toISOString());
+    if(error){note('Daily report could not load: '+error.message,'error');return;}
+    const rows=data||[];
+    const sum=items=>items.reduce((total,o)=>total+Number(o.total_paise||0),0);
+    const taxSum=items=>items.reduce((total,o)=>total+Number(o.tax_paise||0),0);
+    const byPayment=method=>rows.filter(o=>o.payment_method===method);
+    $('reportOrders').textContent=rows.length;
+    $('reportSales').textContent=money(sum(rows));
+    $('reportTax').textContent=money(taxSum(rows));
+    $('reportCash').textContent=money(sum(byPayment('cash')));
+    $('reportUpi').textContent=money(sum(byPayment('upi')));
+    $('reportCard').textContent=money(sum(byPayment('card')));
+    $('reportBankTransfer').textContent=money(sum(byPayment('bank_transfer')));
+    $('reportUnpaid').textContent=money(sum(byPayment('unpaid')));
     $('reportTypes').textContent=rows.filter(o=>o.order_type==='dine_in').length+' / '+rows.filter(o=>o.order_type==='takeaway').length;
   }
   function renderManageMenu(){
